@@ -97,3 +97,5 @@ _tmp/
 # Python cache in tests
 tests/__pycache__/
 
+.idea
+
