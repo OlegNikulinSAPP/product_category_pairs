@@ -1,8 +1,7 @@
 pyspark>=3.5,<3.6
 
-# Optional: testing/quality tools (uncomment if needed)
+# Опционально: инструменты для тестирования и контроля качества (раскомментируйте при необходимости)
 # pytest>=8.0
 # pytest-cov>=5.0
 # mypy>=1.10
 # ruff>=0.6
-

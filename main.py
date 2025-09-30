@@ -17,19 +17,6 @@ def setup_spark_environment():
     os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
 
 
-def create_spark_session():
-    """Создание SparkSession с правильными настройками"""
-    return SparkSession.builder \
-        .appName("ProductCategoryApp") \
-        .master("local[1]") \
-        .config("spark.driver.bindAddress", "127.0.0.1") \
-        .config("spark.driver.host", "127.0.0.1") \
-        .config("spark.sql.adaptive.enabled", "false") \
-        .config("spark.sql.adaptive.coalescePartitions.enabled", "false") \
-        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
-        .getOrCreate()
-
-
 def get_product_category_pairs(
         products: DataFrame,
         categories: DataFrame,
@@ -60,38 +47,34 @@ def get_product_category_pairs(
     return product_categories
 
 
- 
 def main():
     """Основная функция с примером использования"""
     setup_spark_environment()
 
     try:
-        spark = create_spark_session()
-        spark.sparkContext.setLogLevel("ERROR")
+        spark = SparkSession.builder.appName("ProductCategoryApp").master("local[1]").getOrCreate()
 
-        print("🚀 ПРИМЕР ИСПОЛЬЗОВАНИЯ ФУНКЦИИ get_product_category_pairs")
-        print("=" * 60)
-
-        # Создаем тестовые данные
+        # Создаем тестовые данные для продуктов питания
         products_data = [
-            (1, "Laptop"),
-            (2, "Mouse"),
-            (3, "Keyboard"),  # Без категории
-            (4, "Monitor"),  # Несколько категорий
-            (5, "Webcam")  # Без категории
+            (1, "Яблоки"),
+            (2, "Молоко"),
+            (3, "Хлеб"),  # Без категории
+            (4, "Сыр"),   # Несколько категорий
+            (5, "Рыба")
         ]
 
         categories_data = [
-            (1, "Electronics"),
-            (2, "Accessories"),
-            (3, "Office Equipment")
+            (1, "Фрукты"),
+            (2, "Молочные продукты"),
+            (3, "Мясо и рыба")
         ]
 
         links_data = [
-            (1, 1),  # Laptop -> Electronics
-            (2, 2),  # Mouse -> Accessories
-            (4, 1),  # Monitor -> Electronics
-            (4, 3)  # Monitor -> Office Equipment
+            (1, 1),  # Яблоки -> Фрукты
+            (2, 2),  # Молоко -> Молочные продукты
+            (4, 2),  # Сыр -> Молочные продукты
+            (4, 3),  # Сыр -> Мясо и рыба (для примера)
+            (5, 3)   # Рыба -> Мясо и рыба
         ]
 
         # Создаем датафреймы
@@ -114,54 +97,27 @@ def main():
         links_df = spark.createDataFrame(links_data, links_schema)
 
         # Показываем исходные данные
-        print("\n📊 ИСХОДНЫЕ ДАННЫЕ:")
-        print("\n--- ПРОДУКТЫ ---")
+        print("Продукты:")
         products_df.show()
 
-        print("\n--- КАТЕГОРИИ ---")
+        print("Категории:")
         categories_df.show()
 
-        print("\n--- СВЯЗИ ---")
+        print("Связи продуктов с категориями:")
         links_df.show()
 
         # Вызываем нашу функцию
-        print("\n🔧 ВЫЗОВ ФУНКЦИИ get_product_category_pairs...")
         result_df = get_product_category_pairs(products_df, categories_df, links_df)
 
         # Показываем результат
-        print("\n🎯 РЕЗУЛЬТАТ:")
+        print("Результат - пары продукт-категория:")
         result_df.show()
-
-        # Анализ результатов
-        results = result_df.collect()
-
-        print("\n📈 АНАЛИЗ РЕЗУЛЬТАТОВ:")
-        total_pairs = len(results)
-        products_with_categories = len([r for r in results if r['category_name'] is not None])
-        products_without_categories = len([r for r in results if r['category_name'] is None])
-
-        print(f"• Всего пар: {total_pairs}")
-        print(f"• Продуктов с категориями: {products_with_categories}")
-        print(f"• Продуктов без категорий: {products_without_categories}")
-
-        # Показываем продукты без категорий
-        if products_without_categories > 0:
-            print("\n⚠️  ПРОДУКТЫ БЕЗ КАТЕГОРИЙ:")
-            for row in results:
-                if row['category_name'] is None:
-                    print(f"   - {row['product_name']}")
-
-        print("\n" + "=" * 60)
-        print("✅ ПРИМЕР ЗАВЕРШЕН УСПЕШНО!")
 
         spark.stop()
 
     except Exception as e:
-        print(f"❌ ОШИБКА: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"ОШИБКА: {e}")
 
 
 if __name__ == "__main__":
-    # Запуск примера использования
     main()
